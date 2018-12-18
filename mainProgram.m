@@ -19,14 +19,14 @@ rho = 1.225;    % [kg/m^3] density
 num_panel = m;
 
 %% Viscous-Inviscid Iteration
-threshold = 30;
-err = inf;
+threshold = 1e-05;
+err = 1000;
 iter = 0;
 % Initialization
 old_dels = zeros(num_panel, 1);
 g = zeros(num_panel+1, 1);
 
-%while err >= threshold
+while err >= threshold
     %% Calculate inviscid term using Potential Flow method
     % TEMPORARY SUBROUTINE
     [x, y, gamma, vtan, cp] = panelMethod(xb,yb,m,mp1,alpha,g);
@@ -35,15 +35,16 @@ g = zeros(num_panel+1, 1);
     U_in = abs(U_inf*vtan');
 
     %% Calculate viscous term using Karman-Pohlhausen BL method
-    [delta, deltas, thetas, t_wall, cf, trans, sp] = boundLayer_v3...
+    [delta, deltas, thetas, t_wall, cf, trans, stag] = boundLayer_v3...
         (U_in, xb', yb', x', y', c, rho, U_inf, mu);
 
     % Calculate boundary condition for inviscid solver
-    g(1:end-1) = U_in.*deltas;
-    g(end) = U_in(m).*deltas(m);
+    g(1:end-1) = 0.03.*deltas;
+    g(end) = 0.03.*deltas(m);
     
     % Looping criteria
-    err = sum(abs((deltas - old_dels)./old_dels));
+    err = sum(abs((deltas - old_dels)./old_dels)*100);
+        
     old_dels(:) = deltas;
     
     % Plot error
@@ -54,12 +55,12 @@ g = zeros(num_panel+1, 1);
     %plot(num_iter(1:iter),err_iter(1:iter),'r');
 
     fprintf('iteration %d ------ error = %.2d\n', iter, err);
-%end
+end
 
 %% Post-Processing
 
 % Calculate lift and drag coefficient
-up = sp(1); low = sp(2);
+up = stag+1; low = stag-1;
 cp_u = 0; cp_l = 0;
 cf_u = 0; cf_l = 0;
 % Upper airfoil

@@ -5,7 +5,7 @@
 %           which is an improvement of Michel's method
 %       *turbulent region is neglected
 
-function [delta, deltas, thetas, tw, cf, trans_id, sp] = boundLayer_v3...
+function [delta, deltas, thetas, tw, cf, trans_id, ind_stag] = boundLayer_v3...
     (U_in, xb, yb, xp, yp, c, rho, U_inf, mu)
 %% Initialize input variables
 if size(U_in, 2) ~= 1
@@ -18,16 +18,8 @@ Re = U_inf*c/kmu;
 [~, ind_stag] = min(abs(U_in));
 disp(ind_stag);
 
-if abs(U_in(ind_stag+1)) < abs(U_in(ind_stag-1))
-    up = ind_stag + 1;
-    low = ind_stag;
-else
-    up = ind_stag;
-    low = ind_stag - 1;
-end
-
-sp = [up low];
-rp = [xp, yp];
+up = ind_stag+1;
+low = ind_stag-1;
 
 % Calculate ds
 rb = [xb, yb];
@@ -53,6 +45,8 @@ cf = zeros(length(U_in),1);
 trans_id = zeros(2,1);
 
 options = optimset('Display','off');
+x0 = 0.01;
+factor = 1000;
 
 %% Solution for UPPER airfoil
 init = up;
@@ -63,9 +57,9 @@ dU_u = zeros(length(U_in(id)),1);
 for i=id
     j = i - up + 1;
     if i ~= length(U_in)
-        dU_u(j) = (U_in(i+1) - U_in(i))/(norm(rp(i+1,:) - rp(i,:))/c);
+        dU_u(j) = (U_in(i+1) - U_in(i))/((xp(i+1) - xp(i))/c);
     else
-        dU_u(j) = (U_in(i) - U_in(i-1))/(norm(rp(i,:) - rp(i-1,:))/c);
+        dU_u(j) = (U_in(i) - U_in(i-1))/((xp(i) - xp(i-1))/c);
     end
 end
 
@@ -81,13 +75,18 @@ for i = 1:length(dU_u)
         (abs((xp(j)-xp(j-1))))/2);
     K(j) = tetau;
     
-    lambda = (tetau^2)*dU_u(i)/kmu;
+    lambda = (tetau^2)*dU_u(i)/(factor*kmu);
     L(j) = lambda;
-    G = fsolve(@(x)(x*((37/315)-(x/945)-(x^2/9072))^2 - lambda),0,options);
+    G = fzero(@(x)(x*((37/315)-(x/945)-(x^2/9072))^2 - lambda),x0,options);
+    if G < -12
+        G = -12;
+    elseif G > 12
+        G = 12;
+    end
     
     A(j) = G;
 
-    clear G
+    clear G lambda
 end
 
 % Calculate xt
@@ -129,9 +128,9 @@ dU_l = zeros(length(U_in(id)),1);
 for i=id
     j = low - i + 1;
     if i ~= 1
-        dU_l(j) = (U_in(i-1) - U_in(i))/(norm(rp(i-1,:) - rp(i,:))/c);
+        dU_l(j) = (U_in(i-1) - U_in(i))/((xp(i-1) - xp(i))/c);
     else
-        dU_l(j) = (U_in(i) - U_in(i+1))/(norm(rp(i,:) - rp(i+1,:))/c);
+        dU_l(j) = (U_in(i) - U_in(i+1))/((xp(i) - xp(i+1))/c);
     end
 end
 
@@ -147,13 +146,18 @@ for i = 1:length(dU_l)
         (abs((xp(j)-xp(j+1))))/2);
     K(j) = tetal;
     
-    lambda = (tetal^2)*dU_l(i)/kmu;
+    lambda = (tetal^2)*dU_l(i)/(factor*kmu);
     L(j) = lambda;
-    G = fsolve(@(x)(x*((37/315)-(x/945)-(x^2/9072))^2 - lambda),0,options);    
+    G = fzero(@(x)(x*((37/315)-(x/945)-(x^2/9072))^2 - lambda),x0,options);    
+    if G < -12
+        G = -12;
+    elseif G > 12
+        G = 12;
+    end
     
     A(j) = G;
     
-    clear G
+    clear G lambda
 end
 
 % Calculate xt
@@ -186,4 +190,11 @@ end
 
 clear RHS LHS xt id temp
 
+%% Properties calculation at stagnation point
+i = ind_stag;
+dU_stag = (U_in(i+1) - U_in(i))/((xp(i+1) - xp(i))/c);
+thetas(i) = sqrt(0.075*kmu/dU_stag);
+delta(i) = thetas(i)*315/37;
+deltas(i) = delta(i)*3/10;
+tw(i) = mu*U_in(i)*2/delta(i);
 end
