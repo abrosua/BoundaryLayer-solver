@@ -16,7 +16,7 @@ Re = U_inf*c/kmu;
 
 % Obtain stagnation point
 [~, ind_stag] = min(abs(U_in));
-disp(ind_stag);
+%disp(ind_stag);
 
 up = ind_stag+1;
 low = ind_stag-1;
@@ -112,7 +112,7 @@ trans_u = abs(RHS - LHS);
 
 temp = find(trans_u <= 1e-05);
 if isempty(temp)
-    trans_id(1) = nan;
+    trans_id(1) = length(xp)*1000;
 else
     trans_id(1) = temp;
 end
@@ -183,7 +183,7 @@ trans_l = abs(RHS - LHS);
 
 temp = find(trans_l <= 1e-05);
 if isempty(temp)
-    trans_id(2) = nan;
+    trans_id(2) = length(xp)*1000;
 else
     trans_id(2) = temp;
 end
@@ -192,7 +192,7 @@ clear RHS LHS xt id temp
 
 %% Properties calculation at stagnation point
 i = ind_stag;
-dU_stag = (U_in(i+1) - U_in(i))/((xp(i+1) - xp(i))/c);
+dU_stag = abs((U_in(i+1) - U_in(i))/((xp(i+1) - xp(i))/c));
 thetas(i) = sqrt(0.075*kmu/dU_stag);
 delta(i) = thetas(i)*315/37;
 deltas(i) = delta(i)*3/10;
