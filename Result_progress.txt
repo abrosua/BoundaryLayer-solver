@@ -1,0 +1,13 @@
+NACA 2308 Cl and Cd results from MATLAB
+Cl is quite similar, while Cd shows anomaly!
+
+1 = 0.34; 0.0849
+2 = 0.46; 0.0856
+3 = 0.57; 0.0770
+4 = 0.69; 0.0770
+5 = 0.80; 0.0747
+6 = 0.91; 0.0686
+-------------- Can't predict STALL! --------------
+7 = 1.02; 0.0746
+8 = 1.13; 0.0687
+9 = 
