@@ -58,9 +58,14 @@ while err >= threshold
 end
 
 %% Post-Processing
-
-% Calculate lift and drag coefficient
 up = stag+1; low = stag-1;
+% Plot error iteration
+figure; grid on;
+plot(num_iter, err_iter, 'r', 'linewidth', 2);
+xlabel('Number of iteration'); ylabel('Total error [%]');
+title('Error convergence');
+
+%% Calculate lift and drag coefficient
 cp_u = 0; cp_l = 0;
 cf_u = 0; cf_l = 0;
 % Upper airfoil
@@ -84,9 +89,9 @@ disp('Results: ');
 fprintf('Cl = %.2f\n', cl);
 fprintf('Cd = %.2f\n', cd);
 
-% Plot pressure coefficient and velocity distribution
-ind_u = up:length(x);
-ind_l = 1:low;
+%% Plot pressure coefficient and velocity distribution
+ind_u = stag:length(x);
+ind_l = 1:stag;
 
 figure; hold on; grid on
 plot(x(ind_u), -cp(ind_u), 'b-');
@@ -115,20 +120,18 @@ title('Coefficient of friction distribution');
 legend('Upper', 'Lower');
 hold off
 
-% Plot airfoil with boundary layer
+%% Plot airfoil with boundary layer
 %boundary layer thickness
-yBL = zeros(m,1);
-for i=1:m
-   if y(i)>0
-       yBL(i) = y(i) + delta(i);
-   else
-       yBL(i) = y(i) - delta(i);
-   end
-end
+yBL = zeros(1,m);
+yBL(up:end) = y(up:end) + delta(up:end)';
+yBL(1:low) = y(1:low) - delta(1:low)';
+yBL(stag) = y(stag) + delta(stag)*sin(alpha+pi);
+xBL(stag) = x(stag) - delta(stag)*cos(alpha);
 
 figure; grid on; hold on; axis equal
-plot(x, y, 'b');
-plot(x, yBL, 'r');
+plot(x, y, 'k', 'linewidth', 2);
+plot(x, yBL, 'r', 'linewidth', 2);
+plot(xBL(stag), yBL(stag), 'b*');
 legend('Airfoil', 'Boundary Layer');
 xlabel('x/c'); ylabel('y');
 title('Boundary Layer at Airfoil');
