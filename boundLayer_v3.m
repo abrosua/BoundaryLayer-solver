@@ -102,7 +102,7 @@ delta(id) = sqrt(abs(A(id)*kmu./dU_u));
 deltas(id) = delta(id).*(3/10 - A(id)./120);
 thetas(id) = delta(id).*(37/315 - A(id)./945 - (A(id).^2)./9072);
 tw(id) = (mu*U_in(id)./delta(id)).*(2 + A(id)./6);
-cf(id) = 2*kmu*l_fun(A(id))./(U_in(id).*thetas(id));
+cf(id) = kmu*(2+A(id)/6)./(U_in(id).*delta(id));
 
 % Checking the transition point
 RHS = abs(U_in(id)).*thetas(id)./kmu;
@@ -173,7 +173,7 @@ delta(id) = sqrt(abs(A(id)*kmu./dU_l));
 deltas(id) = delta(id).*(3/10 - A(id)./120);
 thetas(id) = delta(id).*(37/315 - A(id)./945 - (A(id).^2)./9072);
 tw(id) = (mu*U_in(id)./delta(id)).*(2 + A(id)./6);
-cf(id) = 2*kmu*l_fun(A(id))./(U_in(id).*thetas(id));
+cf(id) = kmu*(2+A(id)/6)./(U_in(id).*delta(id));
 
 % Checking the transition point
 RHS = abs(U_in(id)).*thetas(id)./kmu;
