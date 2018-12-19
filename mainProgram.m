@@ -17,6 +17,8 @@ rho = 1.225;    % [kg/m^3] density
 %% Input geometry
 [xb, yb, m, mp1, U_inf, alpha] = readData(airfoil_dir);
 num_panel = m;
+q = 0.5*rho*U_inf^2;
+Re = rho*U_inf*c/mu;
 
 %% Viscous-Inviscid Iteration
 threshold = 1e-05;
@@ -83,11 +85,11 @@ for i = low:-1:2
     end
 end
 cl = (cp_l - cp_u)*cos(alpha*pi/180);
-cd = cf_u + cf_l;
+cd = (cf_u + cf_l)/q;
 % Displaying the results
 disp('Results: ');
 fprintf('Cl = %.2f\n', cl);
-fprintf('Cd = %.2f\n', cd);
+fprintf('Cd = %.4f\n', cd);
 
 %% Plot pressure coefficient and velocity distribution
 ind_u = stag:length(x);
