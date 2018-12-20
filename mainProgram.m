@@ -37,8 +37,8 @@ while err >= threshold
     U_in = abs(U_inf*vtan');
 
     %% Calculate viscous term using Karman-Pohlhausen BL method
-    [delta, deltas, thetas, t_wall, cf, trans, stag] = boundLayer_v3...
-        (U_in, xb', yb', x', y', c, rho, U_inf, mu);
+    [delta, deltas, t_wall, cf, trans, stag, uns] = boundLayer_v3...
+        (U_in, xb', yb', x', y', c, rho, mu);
 
     % Calculate boundary condition for inviscid solver
     g(1:end-1) = 0.03.*deltas;
@@ -73,19 +73,19 @@ cf_u = 0; cf_l = 0;
 % Upper airfoil
 for i = up:m-1
     cp_u = cp_u + (cp(i+1) + cp(i))*(x(i+1)-x(i))/2;
-    if i < up+trans(1)
+    if i < uns(1)
         cf_u = cf_u + (cf(i+1) + cf(i))*(x(i+1)-x(i))/2;
     end
 end
 % Lower airfoil
 for i = low:-1:2
     cp_l = cp_l + (cp(i-1) + cp(i))*(x(i-1)-x(i))/2;
-    if i > low-trans(2)
+    if i > uns(2)
         cf_l = cf_l + (cf(i-1) + cf(i))*(x(i-1)-x(i))/2;
     end
 end
 cl = (cp_l - cp_u)*cos(alpha*pi/180);
-cd = (cf_u + cf_l)/q;
+cd = (cf_u + cf_l);
 % Displaying the results
 disp('Results: ');
 fprintf('Cl = %.2f\n', cl);
@@ -108,7 +108,7 @@ figure; hold on; grid on
 plot(x(ind_u), abs(vtan(ind_u)), 'b-');
 plot(x(ind_l), abs(vtan(ind_l)), 'r-');
 axis([0 1 min(vtan) max(vtan)]);
-xlabel('x/c'); ylabel('v/U_inf');
+xlabel('x/c'); ylabel('v/U');
 title('Velocity distribution');
 legend('Upper', 'Lower');
 hold off
@@ -131,8 +131,8 @@ yBL(stag) = y(stag) + delta(stag)*sin(alpha+pi);
 xBL(stag) = x(stag) - delta(stag)*cos(alpha);
 
 figure; grid on; hold on; axis equal
-plot(x, y, 'k', 'linewidth', 2);
-plot(x, yBL, 'r', 'linewidth', 2);
+plot(x, y, 'k');
+plot(x(uns(2)+1:uns(1)-1), yBL(uns(2)+1:uns(1)-1), 'r');
 plot(xBL(stag), yBL(stag), 'b*');
 legend('Airfoil', 'Boundary Layer');
 xlabel('x/c'); ylabel('y');
