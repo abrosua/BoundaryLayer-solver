@@ -5,14 +5,13 @@
 %           which is an improvement of Michel's method
 %       *turbulent region is neglected
 
-function [delta, deltas, thetas, tw, cf, trans_id, ind_stag] = boundLayer_v3...
-    (U_in, xb, yb, xp, yp, c, rho, U_inf, mu)
+function [delta, deltas, tw, cf, trans_id, ind_stag, unstable] = boundLayer_v3...
+    (U_in, xb, yb, xp, yp, c, rho, mu)
 %% Initialize input variables
 if size(U_in, 2) ~= 1
     U_in = U_in';
 end
 kmu = mu/rho;
-Re = U_inf*c/kmu;
 
 % Obtain stagnation point
 [~, ind_stag] = min(abs(U_in));
@@ -38,10 +37,7 @@ A = zeros(length(U_in),1);
 K = zeros(length(U_in),1);
 L = zeros(length(U_in),1);
 delta = zeros(length(U_in),1);
-deltas = zeros(length(U_in),1);
 thetas = zeros(length(U_in),1);
-tw = zeros(length(U_in),1);
-cf = zeros(length(U_in),1);
 trans_id = zeros(2,1);
 
 options = optimset('Display','off');
@@ -66,7 +62,7 @@ end
 % For transition check
 xt = zeros(length(dU_u),1);
 
-tetau = 0;
+tetau = 0; z = 1;
 % Iteration to calculate handle variables for all position
 for i = 1:length(dU_u)
     j = i+up-1;
@@ -80,8 +76,12 @@ for i = 1:length(dU_u)
     G = fzero(@(x)(x*((37/315)-(x/945)-(x^2/9072))^2 - lambda),x0,options);
     if G < -12
         G = -12;
+        uns_u(z) = j;
+        z = z+1;        
     elseif G > 12
         G = 12;
+        uns_u(z) = j;
+        z = z+1;        
     end
     
     A(j) = G;
@@ -99,10 +99,7 @@ end
     
 % Construct the BL result variables
 delta(id) = sqrt(abs(A(id)*kmu./dU_u));
-deltas(id) = delta(id).*(3/10 - A(id)./120);
 thetas(id) = delta(id).*(37/315 - A(id)./945 - (A(id).^2)./9072);
-tw(id) = (mu*U_in(id)./delta(id)).*(2 + A(id)./6);
-cf(id) = kmu*(2+A(id)/6)./(U_in(id).*delta(id));
 
 % Checking the transition point
 RHS = abs(U_in(id)).*thetas(id)./kmu;
@@ -137,7 +134,7 @@ end
 % For transition check
 xt = zeros(length(dU_l),1);
 
-tetal = 0;
+tetal = 0; z = 1;
 % Iteration to calculate handle variables for all position
 for i = 1:length(dU_l)
     j = low-i+1;
@@ -151,8 +148,12 @@ for i = 1:length(dU_l)
     G = fzero(@(x)(x*((37/315)-(x/945)-(x^2/9072))^2 - lambda),x0,options);    
     if G < -12
         G = -12;
+        uns_l(z) = j;
+        z = z+1;
     elseif G > 12
         G = 12;
+        uns_l(z) = j;
+        z = z+1;        
     end
     
     A(j) = G;
@@ -170,10 +171,7 @@ end
 
 % Construct the BL result variables
 delta(id) = sqrt(abs(A(id)*kmu./dU_l));
-deltas(id) = delta(id).*(3/10 - A(id)./120);
 thetas(id) = delta(id).*(37/315 - A(id)./945 - (A(id).^2)./9072);
-tw(id) = (mu*U_in(id)./delta(id)).*(2 + A(id)./6);
-cf(id) = kmu*(2+A(id)/6)./(U_in(id).*delta(id));
 
 % Checking the transition point
 RHS = abs(U_in(id)).*thetas(id)./kmu;
@@ -190,11 +188,27 @@ end
 
 clear RHS LHS xt id temp
 
-%% Properties calculation at stagnation point
+%% Fixing variables at unstable region (A > abs(12))
 i = ind_stag;
+uns_u = min(uns_u);
+uns_l = max(uns_l);
+delta(uns_u:end) = delta(uns_u-1);
+delta(1:uns_l) = delta(uns_l+1);
+unstable = [uns_u uns_l];
+
+%% Resulting variables
+deltas = delta.*(3/10 - A./120);
+tw = mu*U_in.*(2 + A./6)./delta;
+cf = tw./(0.5*rho*U_in.^2);
+%cf(id) = 2*kmu*l_fun(A(id))./(U_in(id).*K(id));
+
+%% Properties calculation at stagnation point
 dU_stag = abs((U_in(i+1) - U_in(i))/((xp(i+1) - xp(i))/c));
 thetas(i) = sqrt(0.075*kmu/dU_stag);
+K(i) = sqrt(0.075*kmu/dU_stag);
 delta(i) = thetas(i)*315/37;
 deltas(i) = delta(i)*3/10;
 tw(i) = mu*U_in(i)*2/delta(i);
+cf(i) = tw(i)./(0.5*rho*U_in(i).^2);
+
 end
